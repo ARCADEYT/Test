@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCADE.SJ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #ffffff;
+    --dot: #d8d8d8;
+    --ink: #111111;
+    --card-border: #111111;
+    --muted: #8a8a8a;
+    --accent-blue: #2563eb;
+    --accent-orange: #d97706;
+    --status-green: #16a34a;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    background-image: radial-gradient(var(--dot) 1.4px, transparent 1.4px);
+    background-size: 22px 22px;
+    font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  .stage {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+  }
+
+  .card {
+    width: 420px;
+    background: #ffffff;
+    border: 1.5px solid var(--card-border);
+    border-radius: 18px;
+    padding: 28px 24px 20px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+  }
+
+  /* Header */
+  .title-row {
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .title-link {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+    transition: opacity 0.15s;
+  }
+
+  .title-link:hover {
+    opacity: 0.7;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 27px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .caret {
+    display: inline-block;
+    width: 2px;
+    background: var(--ink);
+    margin-left: 2px;
+    animation: blink 0.9s steps(1) infinite;
+    height: 0.85em;
+    vertical-align: -2px;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    50.01%, 100% { opacity: 0; }
+  }
+
+  .sync-label {
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--status-green);
+    margin-top: 4px;
+    margin-bottom: 18px;
+    height: 14px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .sync-label.show { opacity: 1; }
+
+  .desc-noisy {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .desc-noisy::after {
+    content: "";
+    position: absolute;
+    inset: -6px -10px;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-repeat: repeat;
+    mix-blend-mode: multiply;
+    opacity: 0.55;
+    animation: noiseShift 0.5s steps(2) infinite;
+    z-index: 1;
+  }
+
+  @keyframes noiseShift {
+    0%   { transform: translate(0, 0); }
+    50%  { transform: translate(-1px, 1px); }
+    100% { transform: translate(1px, -1px); }
+  }
+
+  .desc {
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+
+  .desc b { font-weight: 700; }
+
+  .desc-sub {
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink);
+    margin: 0 0 10px;
+  }
+
+  .github-link {
+    display: block;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    text-decoration: underline;
+    margin-bottom: 18px;
+  }
+
+  /* Icon row */
+  .icon-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-bottom: 18px;
+    position: relative;
+  }
+
+  .icon-row a {
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.15s;
+  }
+
+  .icon-row a:hover { opacity: 0.55; }
+
+  .icon-row svg { width: 19px; height: 19px; }
+
+  .search-icon {
+    position: absolute;
+    right: 0;
+  }
+
+  .search-icon svg { width: 20px; height: 20px; }
+
+  /* Order form */
+  .form-block {
+    margin-top: 4px;
+  }
+
+  .field-label {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    margin-bottom: 2px;
+  }
+
+  .field-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid #e2e2e2;
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 16px;
+  }
+
+  .input-row:focus-within {
+    border-color: var(--ink);
+  }
+
+  .input-row .input-icon {
+    padding: 0 9px;
+    color: var(--muted);
+    font-size: 14px;
+    display: flex;
+  }
+
+  .input-row .input-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .input-row input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 9px 4px;
+    color: var(--ink);
+  }
+
+  .input-row input::placeholder {
+    color: #bdbdbd;
+  }
+
+  .qty-row {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid #e2e2e2;
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 18px;
+  }
+
+  .qty-row:focus-within {
+    border-color: var(--ink);
+  }
+
+  .qty-row .input-icon {
+    padding: 0 9px;
+    color: var(--muted);
+    display: flex;
+  }
+
+  .qty-row .input-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .qty-row input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 9px 4px;
+    color: var(--ink);
+  }
+
+  .qty-row input::placeholder {
+    color: #bdbdbd;
+  }
+
+  .input-row.error {
+    border-color: #ee0d0d;
+  }
+
+  .link-error {
+    display: none;
+    color: #ee0d0d;
+    font-size: 10.5px;
+    line-height: 1.4;
+    margin: -10px 0 14px;
+  }
+
+  .link-error.show {
+    display: block;
+  }
+
+  .qty-row.error {
+    border-color: #ee0d0d;
+  }
+
+  .qty-error {
+    display: none;
+    color: #ee0d0d;
+    font-size: 10.5px;
+    line-height: 1.4;
+    margin: -10px 0 14px;
+  }
+
+  .qty-error.show {
+    display: block;
+  }
+
+  .send-btn {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+    color: #fff;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    box-shadow: 0 10px 24px -8px rgba(124, 58, 237, 0.55);
+    transition: transform 0.1s, box-shadow 0.15s;
+    margin-bottom: 14px;
+  }
+
+  .send-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px -8px rgba(124, 58, 237, 0.65);
+  }
+
+  .send-main {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .send-main svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .send-sub {
+    font-size: 10px;
+    letter-spacing: 0.6px;
+    opacity: 0.9;
+  }
+
+  /* Footer */
+  .footer-rule {
+    border: none;
+    border-top: 1.5px solid var(--ink);
+    margin: 14px 0 12px;
+  }
+
+  .footer-text {
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    color: var(--accent-orange);
+    margin: 0;
+  }
+
+  .footer-text b { color: var(--ink); }
+  /* Success toast (Order validated) */
+  .duplicate-card {
+    overflow: hidden;
+    position: relative;
+    text-align: left;
+    border-radius: 0.5rem;
+    max-width: 290px;
+    width: 100%;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    background-color: #fff;
+    font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .duplicate-image {
+    display: flex;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #fde2e2;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    animation: toastPulse .6s linear alternate-reverse infinite;
+  }
+
+  .duplicate-image svg {
+    color: #ee0d0d;
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .duplicate-title {
+    color: #a31515;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5rem;
+  }
+
+  .duplicate-close {
+    display: inline-flex;
+    padding: 0.5rem 1rem;
+    background-color: #ee0d0d;
+    color: #ffffff;
+    font-size: 0.95rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+    justify-content: center;
+    width: 100%;
+    border-radius: 0.375rem;
+    border: none;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .toast-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+  }
+
+  .toast-overlay.show {
+    display: flex;
+  }
+
+  .toast-card {
+    overflow: hidden;
+    position: relative;
+    text-align: left;
+    border-radius: 0.5rem;
+    max-width: 290px;
+    width: 100%;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    background-color: #fff;
+    font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .toast-dismiss {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    background-color: #fff;
+    color: black;
+    border: 2px solid #D1D5DB;
+    font-size: 1rem;
+    font-weight: 300;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    transition: .3s ease;
+    cursor: pointer;
+  }
+
+  .toast-dismiss:hover {
+    background-color: #ee0d0d;
+    border: 2px solid #ee0d0d;
+    color: #fff;
+  }
+
+  .toast-header {
+    padding: 1.25rem 1rem 1rem 1rem;
+  }
+
+  .toast-image {
+    display: flex;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #e2feee;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    animation: toastPulse .6s linear alternate-reverse infinite;
+    transition: .6s ease;
+  }
+
+  .toast-image svg {
+    color: #0afa2a;
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .toast-content {
+    margin-top: 0.75rem;
+    text-align: center;
+  }
+
+  .toast-title {
+    color: #066e29;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5rem;
+  }
+
+  .toast-message {
+    margin-top: 0.5rem;
+    color: #595b5f;
+    font-size: 0.8rem;
+    line-height: 1.25rem;
+  }
+
+  .toast-message strong {
+    color: #066e29;
+    font-weight: 700;
+  }
+
+  .toast-actions {
+    margin: 0.75rem 1rem;
+  }
+
+  .toast-history {
+    display: inline-flex;
+    padding: 0.5rem 1rem;
+    background-color: #1aa06d;
+    color: #ffffff;
+    font-size: 0.95rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+    justify-content: center;
+    width: 100%;
+    border-radius: 0.375rem;
+    border: none;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .toast-track {
+    display: inline-flex;
+    margin-top: 0.75rem;
+    padding: 0.5rem 1rem;
+    color: #242525;
+    font-size: 0.95rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+    justify-content: center;
+    width: 100%;
+    border-radius: 0.375rem;
+    border: 1px solid #D1D5DB;
+    background-color: #fff;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  @keyframes toastPulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.09); }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="card">
+
+    <div class="title-row">
+      <a href="https://www.instagram.com/arcade.sj/" target="_blank" rel="noopener" class="title-link">
+        <h1 id="typedTitle"></h1>
+      </a>
+    </div>
+    <div class="sync-label" id="syncLabel">DEVELOPER</div>
+
+    <p class="desc desc-noisy">Una herramienta para enviar views a Reels de Instagram de forma simple y segura. Solo necesitás pegar el link del Reel y hacer el pedido, no pedimos contraseña ni acceso a tu cuenta. No hay riesgo de baneos, shadowbans ni advertencias. Con el tiempo se van a ir agregando nuevas funciones.</p>
+
+    <div class="icon-row">
+      <a href="https://www.instagram.com/arcade.sj/" target="_blank" rel="noopener" title="Instagram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+      </a>
+    </div>
+
+    <div class="form-block">
+      <div class="field-label">Link del reel</div>
+      <div class="field-hint">Pegá el link de tu reel</div>
+      <div class="input-row" id="linkRow">
+        <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg></span>
+        <input type="text" id="linkInput" placeholder="https://instagram.com/p/ABC123...">
+      </div>
+      <div class="link-error" id="linkError">⚠ Verificá que esté pegado el enlace de tu reel antes de enviar.</div>
+
+      <div class="field-label">Cantidad</div>
+      <div class="field-hint">Elegí cuántos querés enviar (máximo 50.000)</div>
+      <div class="qty-row" id="qtyRow">
+        <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-6"/></svg></span>
+        <input type="number" id="qtyInput" placeholder="10" min="10" max="50000">
+      </div>
+      <div class="qty-error" id="qtyError">⚠ La cantidad debe ser entre 10 y 50.000.</div>
+
+      <button class="send-btn" id="sendBtn">
+        <span class="send-main"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>Enviar</span>
+        <span class="send-sub">100% GRATIS</span>
+      </button>
+    </div>
+
+    <hr class="footer-rule">
+    <p class="footer-text">© 2026 | <b>ArcadeSJ</b></p>
+
+  </div>
+</div>
+
+<div class="toast-overlay" id="duplicateOverlay">
+  <div class="duplicate-card">
+    <div class="toast-header">
+      <div class="duplicate-image">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <path stroke-linejoin="round" stroke-linecap="round" stroke-width="1.5" stroke="currentColor" d="M6 6l12 12M18 6L6 18"></path>
+        </svg>
+      </div>
+      <div class="toast-content">
+        <span class="duplicate-title">Enlace ya utilizado</span>
+        <p class="toast-message">Este reel ya fue enviado anteriormente. Cada reel solo puede usarse una vez.</p>
+      </div>
+      <div class="toast-actions">
+        <button type="button" class="duplicate-close" id="duplicateClose">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-overlay" id="toastOverlay">
+  <div class="toast-card">
+    <button type="button" class="toast-dismiss" id="toastDismiss">×</button>
+    <div class="toast-header">
+      <div class="toast-image">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <path stroke-linejoin="round" stroke-linecap="round" stroke-width="1.5" stroke="currentColor" d="M20 7L9.00004 18L3.99994 13"></path>
+        </svg>
+      </div>
+      <div class="toast-content">
+        <span class="toast-title">Pedido enviado</span>
+        <p class="toast-message">Trabajamos con perfiles secundarios de alta calidad, con actividad y apariencia real, para que las visualizaciones se vean naturales y no afecten el rendimiento de tu cuenta. <strong>Los pedidos empiezan a reflejarse dentro de los primeros 5 a 10 minutos.</strong></p>
+      </div>
+      <div class="toast-actions">
+        <button type="button" class="toast-history" id="toastHistory">Volver a enviar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const text = "@ARCADE.SJ";
+  const titleEl = document.getElementById('typedTitle');
+  const syncEl = document.getElementById('syncLabel');
+  let i = 0;
+
+  function typeChar() {
+    if (i <= text.length) {
+      titleEl.innerHTML = text.slice(0, i) + '<span class="caret"></span>';
+      i++;
+      setTimeout(typeChar, 75);
+    } else {
+      syncEl.classList.add('show');
+    }
+  }
+
+  typeChar();
+
+  const toastOverlay = document.getElementById('toastOverlay');
+  const qtyInput = document.getElementById('qtyInput');
+  const qtyRow = document.getElementById('qtyRow');
+  const qtyError = document.getElementById('qtyError');
+  const linkInput = document.getElementById('linkInput');
+  const linkRow = document.getElementById('linkRow');
+  const linkError = document.getElementById('linkError');
+  const MIN_QTY = 10;
+  const MAX_QTY = 50000;
+
+  function checkQtyLimit() {
+    const qty = parseInt(qtyInput.value, 10);
+    const tooLow = !isNaN(qty) && qty > 0 && qty < MIN_QTY;
+    const overLimit = !isNaN(qty) && qty > MAX_QTY;
+    const invalid = tooLow || overLimit;
+
+    qtyRow.classList.toggle('error', invalid);
+    qtyError.classList.toggle('show', invalid);
+
+    if (tooLow) {
+      qtyError.textContent = `⚠ La cantidad mínima es ${MIN_QTY}.`; 
+    } else if (overLimit) {
+      qtyError.textContent = `⚠ El límite máximo es de ${MAX_QTY}. Reducí la cantidad.`;
+    }
+
+    return invalid;
+  }
+
+  const SMM_PROXY_URL = '/api/proxy';
+
+  async function sendOrderToSmm(link, quantity) {
+    const response = await fetch(SMM_PROXY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ link, quantity }),
+    });
+
+    const text = await response.text();
+    let data = null;
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        // keep raw text for error reporting
+      }
+    }
+
+    if (!response.ok) {
+      const message = (data && (data.error || data.message)) || text || `HTTP ${response.status} ${response.statusText}`;
+      throw new Error(message);
+    }
+
+    if (data && (data.error || data.status === 'error')) {
+      const message = data.error || data.message || JSON.stringify(data);
+      throw new Error(message);
+    }
+
+    if (text === '') {
+      throw new Error(`Respuesta vacía del servidor: HTTP ${response.status} ${response.statusText}`);
+    }
+
+    return data || text;
+  }
+
+  function checkLinkMissing() {
+    const value = linkInput.value.trim();
+    const igReelPattern = /^https?:\/\/(www\.)?instagram\.com\/(reel|reels|r)\/[A-Za-z0-9_-]+\/?(\?.*)?$/i;
+    const invalid = value === '' || !igReelPattern.test(value);
+    linkRow.classList.toggle('error', invalid);
+    linkError.classList.toggle('show', invalid);
+    if (value === '') {
+      linkError.textContent = '⚠ Verificá que esté pegado el enlace de tu reel antes de enviar.';
+    } else if (invalid) {
+      linkError.textContent = '⚠ Ese enlace no es válido. Pegá un link de reel de Instagram (instagram.com/reel/...).';
+    }
+    return invalid;
+  }
+
+  qtyInput.addEventListener('input', checkQtyLimit);
+  linkInput.addEventListener('input', checkLinkMissing);
+
+  const duplicateOverlay = document.getElementById('duplicateOverlay');
+
+  document.getElementById('sendBtn').addEventListener('click', async () => {
+    const qtyValue = qtyInput.value.trim();
+    const qtyNumber = parseInt(qtyValue, 10);
+    const linkMissing = checkLinkMissing();
+    const overLimit = checkQtyLimit();
+
+    if (linkMissing || overLimit) {
+      return;
+    }
+if (!qtyValue || isNaN(qtyNumber) || qtyNumber < MIN_QTY || qtyNumber > MAX_QTY) {
+      alert(`Por favor, indicá una cantidad válida entre ${MIN_QTY} y ${MAX_QTY}.`);
+      return;
+    }
+
+    const link = linkInput.value.trim();
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.disabled = true;
+
+    try {
+      const response = await sendOrderToSmm(link, qtyNumber);
+      const orderId = response.order || response.order_id || response.orderId;
+      const toastMsg = document.querySelector('.toast-message');
+
+      toastMsg.innerHTML = orderId
+        ? `Pedido creado correctamente. ID: <strong>${orderId}</strong>. Se procesa en minutos.`
+        : 'Pedido enviado correctamente. Se procesa en minutos.';
+
+      toastOverlay.classList.add('show');
+    } catch (e) {
+      console.error('Error al enviar pedido:', e);
+      alert('No se pudo enviar el pedido: ' + e.message);
+    } finally {
+      sendBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('duplicateClose').addEventListener('click', () => {
+    duplicateOverlay.classList.remove('show');
+  });
+
+  duplicateOverlay.addEventListener('click', (e) => {
+    if (e.target === duplicateOverlay) {
+      duplicateOverlay.classList.remove('show');
+    }
+  });
+
+  document.getElementById('toastDismiss').addEventListener('click', () => {
+    toastOverlay.classList.remove('show');
+  });
+
+  toastOverlay.addEventListener('click', (e) => {
+    if (e.target === toastOverlay) {
+      toastOverlay.classList.remove('show');
+    }
+  });
+
+  document.getElementById('toastHistory').addEventListener('click', () => {
+    toastOverlay.classList.remove('show');
+  });
+
+  const toastTrack = document.getElementById('toastTrack');
+  if (toastTrack) {
+    toastTrack.addEventListener('click', () => {
+      toastOverlay.classList.remove('show');
+    });
+  }
+</script>
+
+</body>
+</html>
+
